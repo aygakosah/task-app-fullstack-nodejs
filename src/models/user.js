@@ -51,6 +51,7 @@ const userSchema =new mongoose.Schema({
             type:String,
             require:true
         }
+        
     }],
     avatar:{
         type:Buffer
@@ -72,6 +73,7 @@ userSchema.methods.toJSON = function(){
     delete userObject.avatar
     return userObject
 }
+//Generates authentication keys
 userSchema.methods.genAuthToken = async function(){
     const user = this
     const token = jwt.sign({_id:user._id.toString()}, process.env.JSONWEBTOKEN)
@@ -79,6 +81,8 @@ userSchema.methods.genAuthToken = async function(){
     await user.save()
     return token
 }
+
+//Find a user by credentials login
 userSchema.statics.findByCredentials = async(email, password)=>{
     const user = await User.findOne({email})
     if(!user){
@@ -90,7 +94,7 @@ userSchema.statics.findByCredentials = async(email, password)=>{
     }
     return user
 }
-
+//User can change password here
 userSchema.pre('save', async function(next){
     const user=this
     if(user.isModified('password')){

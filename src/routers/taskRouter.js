@@ -57,12 +57,64 @@ router.get('/tasks/:id',auth, async (req, res)=>{
         res.status(500).send()   
     }
 })
-
+router.get('/taskbyname/:description', auth, async(req, res)=>{
+    // const whichTask = req.query.description
+    // const array = whichTask.split('%20')
+    // let final =""
+    // array.forEach(element => {
+    //     final+=element+" "
+    // });
+    // final.trim()
+    // console.log(final)
+    try {
+        const task = await Tasks.findOne({description:req.params.description, owner:req.user._id})
+        if(!task){
+            res.status(401).send({error:"Name not recognized"})
+        }
+        res.send(task)
+        console.log(req.query)
+    } catch (error) {
+        res.status(500).send(error)
+    }
+})
+router.patch('/tasksupdate', auth, async(req, res)=>{
+    const whichTask = req.query.description
+    const array = whichTask.split('%20')
+    let final =""
+    array.forEach(element => {
+        final+=element+" "
+    });
+    final.trim()
+    console.log(final)
+    const updates=Object.keys(req.body)
+    console.log(updates)
+    const updatesAllowed=['description', 'completed']
+    const Isvalid = updates.every((update)=>{
+        return updatesAllowed.includes(update)
+    })
+    if(!Isvalid){
+        return res.status(400).send({error:"Invalid change"})
+    }
+    try {
+        const task = await Tasks.findOne({description:final, owner:req.user._id})
+        
+        if(!task){
+            return res.status(401).send()
+        }
+        updates.forEach(update => {
+            task[update]=req.body[update]
+        });
+        await task.save()
+        res.send(task)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
 router.patch('/tasks/:id', auth, async(req, res)=>{
     const updates=Object.keys(req.body)
     const updatesAllowed=['description', 'completed']
     const Isvalid = updates.every((update)=>{
-        return updates.includes(update)
+        return updatesAllowed.includes(update)
     })
     if(!Isvalid){
         return res.status(400).send({error:"Invalid change"})
@@ -83,9 +135,10 @@ router.patch('/tasks/:id', auth, async(req, res)=>{
     }
 })
 
-router.delete('/tasks/:id', auth, async(req, res)=>{
+router.delete('/tasks/:description', auth, async(req, res)=>{
     try {
-        const user = await Tasks.findOneAndDelete({_id:req.params.id, owner:req.user._id})
+        console.log(req.params.description)
+        const user = await Tasks.findOneAndDelete({description:req.params.description, owner:req.user._id})
         if(!user){
             return res.status(400).send()
         }
